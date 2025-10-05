@@ -1,1 +1,92 @@
+# Install required package
+!pip install -q google-generativeai
 
+import google.generativeai as genai
+
+# Configure the API with your key
+api_key = "use_your_api"
+genai.configure(api_key=api_key)
+
+# List all available models
+print("Available models:")
+for model in genai.list_models():
+    if 'generateContent' in model.supported_generation_methods:
+        print(f"- {model.name}")
+        print(f"  Supported methods: {model.supported_generation_methods}")
+        print()
+
+# Install required packages
+!pip install -q google-generativeai
+!pip install -q ipywidgets
+
+import google.generativeai as genai
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+
+# Configure the API
+api_key = "use_your_api"
+genai.configure(api_key=api_key)
+
+# Use one of the available models
+model_name = "models/gemini-1.5-flash-latest"  # Fast and good for chatbots
+model = genai.GenerativeModel(model_name)
+chat = model.start_chat()
+
+# Create chat interface
+chat_output = widgets.Output()
+input_text = widgets.Text(placeholder="Type your message here...")
+send_button = widgets.Button(description="Send")
+clear_button = widgets.Button(description="Clear Chat")
+model_dropdown = widgets.Dropdown(
+    options=[
+        "models/gemini-1.5-flash-latest",  # Fast
+        "models/gemini-1.5-pro-latest",    # More capable
+        "models/gemini-2.0-flash",         # Latest flash model
+        "models/gemma-3-27b-it"            # Alternative model
+    ],
+    value="models/gemini-1.5-flash-latest",
+    description="Model:"
+)
+
+def change_model(change):
+    global model, chat
+    model = genai.GenerativeModel(change['new'])
+    chat = model.start_chat()
+    with chat_output:
+        print(f"Model changed to: {change['new']}")
+        print("New chat session started!")
+
+model_dropdown.observe(change_model, names='value')
+
+def on_send_clicked(b):
+    with chat_output:
+        user_input = input_text.value
+        if user_input:
+            print(f"You: {user_input}")
+            try:
+                response = chat.send_message(user_input)
+                print(f"Bot: {response.text}\n")
+            except Exception as e:
+                print(f"Error: {str(e)}\n")
+            input_text.value = ""  # Clear input
+
+def on_clear_clicked(b):
+    chat_output.clear_output()
+    global chat
+    chat = model.start_chat()  # Reset chat
+    with chat_output:
+        print("Chat cleared. New session started!")
+
+send_button.on_click(on_send_clicked)
+clear_button.on_click(on_clear_clicked)
+
+# Display the chat interface
+display(widgets.VBox([
+    model_dropdown,
+    widgets.HBox([input_text, send_button, clear_button]),
+    chat_output
+]))
+
+# Add initial message
+with chat_output:
+    print("Bot: Hello! I'm your  Vishal's chatbot. How can I help you today?")
